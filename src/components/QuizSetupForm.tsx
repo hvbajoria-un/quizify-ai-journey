@@ -16,6 +16,7 @@ import {
 import { QuizDifficulty, QuizSetup, QuizTopic } from "@/types";
 import { useQuizStore } from "@/store/quizStore";
 import { BrainCircuit, ArrowRight } from "lucide-react";
+import LoaderAnimation from "./LoaderAnimation";
 
 const QuizSetupForm = () => {
   const navigate = useNavigate();
@@ -33,6 +34,14 @@ const QuizSetupForm = () => {
   
   const topics: QuizTopic[] = [
     "Percentage", "Time", "Distance", "Speed", "Probability", "Ratio and Proportion", "Averages"
+  ];
+  
+  const generationSteps = [
+    { message: "Analyzing difficulty level...", duration: 1000 },
+    { message: "Preparing question templates...", duration: 1000 },
+    { message: "Generating problem scenarios...", duration: 1000 },
+    { message: "Calculating correct answers...", duration: 1000 },
+    { message: "Finalizing question bank...", duration: 1000 }
   ];
   
   const handleDifficultyChange = (value: number[]) => {
@@ -58,6 +67,10 @@ const QuizSetupForm = () => {
   const getDifficultyIndex = () => {
     return difficultyOptions.indexOf(difficulty);
   };
+  
+  if (isSubmitting) {
+    return <LoaderAnimation steps={generationSteps} />;
+  }
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">

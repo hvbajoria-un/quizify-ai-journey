@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuizStore } from "@/store/quizStore";
@@ -32,24 +31,28 @@ const QuizPanel = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const questionStartTimeRef = useRef<number>(Date.now());
   
-  // Navigate to setup if no questions are loaded
+  const processingSteps = [
+    { message: "Calculating your score...", duration: 1000 },
+    { message: "Analyzing your strengths...", duration: 1000 },
+    { message: "Identifying areas for improvement...", duration: 1000 },
+    { message: "Generating personalized recommendations...", duration: 1000 },
+    { message: "Preparing your results...", duration: 1000 }
+  ];
+  
   useEffect(() => {
     if (questions.length === 0 && !isLoading) {
       navigate("/setup");
     }
   }, [questions, isLoading, navigate]);
 
-  // Reset timer when question changes
   useEffect(() => {
     if (questions.length > 0 && currentQuestionIndex < questions.length) {
       const currentQuestion = questions[currentQuestionIndex];
       setTimer(currentQuestion.timeLimit || 30);
-      // Reset the timer reference for the question
       questionStartTimeRef.current = Date.now();
     }
   }, [currentQuestionIndex, questions]);
 
-  // Handle timer countdown
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => {
@@ -58,22 +61,19 @@ const QuizPanel = () => {
       
       return () => clearInterval(interval);
     } else {
-      // Auto-skip when timer runs out
       skipQuestion();
     }
   }, [timer, skipQuestion]);
   
-  // Reset selected option and start timer when question changes
   useEffect(() => {
     const currentAnswer = userAnswers[currentQuestionIndex];
     setSelectedOption(currentAnswer?.selectedOptionId || null);
     
-    // Reset question start time
     questionStartTimeRef.current = Date.now();
   }, [currentQuestionIndex, userAnswers]);
   
   if (isLoading) {
-    return <LoaderAnimation message="Processing your quiz..." />;
+    return <LoaderAnimation message="Processing your quiz..." steps={processingSteps} />;
   }
   
   if (questions.length === 0) {
@@ -83,7 +83,6 @@ const QuizPanel = () => {
   const currentQuestion = questions[currentQuestionIndex];
   
   const handleOptionSelect = (optionId: string) => {
-    // Calculate time taken to answer
     const timeTaken = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
     
     setSelectedOption(optionId);
@@ -99,7 +98,6 @@ const QuizPanel = () => {
   };
   
   const handleSkipQuestion = () => {
-    // Calculate time taken before skipping
     const timeTaken = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
     
     skipQuestion(timeTaken);
@@ -116,7 +114,6 @@ const QuizPanel = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-4xl cyber-panel relative overflow-hidden">
-        {/* Question progress bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gray-700">
           <div 
             className="h-full bg-gradient-to-r from-cyber-accent to-cyber-purple"
@@ -124,7 +121,6 @@ const QuizPanel = () => {
           />
         </div>
         
-        {/* Question header */}
         <div className="flex justify-between items-center mb-6 mt-2">
           <div className="text-sm md:text-base text-white/70">
             Question {currentQuestionIndex + 1} of {questions.length}
@@ -138,7 +134,6 @@ const QuizPanel = () => {
           </div>
         </div>
         
-        {/* Question */}
         <motion.h2 
           key={`question-${currentQuestionIndex}`}
           initial={{ opacity: 0, y: 20 }}
@@ -149,7 +144,6 @@ const QuizPanel = () => {
           {currentQuestion.text}
         </motion.h2>
         
-        {/* Options */}
         <motion.div 
           className="space-y-4 mb-8"
           initial={{ opacity: 0 }}
@@ -177,7 +171,6 @@ const QuizPanel = () => {
           ))}
         </motion.div>
         
-        {/* Navigation buttons */}
         <div className="flex justify-between">
           <Button
             onClick={handlePreviousQuestion}

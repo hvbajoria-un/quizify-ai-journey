@@ -70,6 +70,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         questions, 
         isQuizStarted: true, 
         isLoading: false,
+        currentQuestionIndex: 0,
         userAnswers: Array(questions.length).fill(null).map(() => ({
           questionId: '',
           selectedOptionId: null,

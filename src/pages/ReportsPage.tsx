@@ -15,7 +15,7 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { BarChart2, FileText, Eye } from "lucide-react";
+import { BarChart2, FileText, Eye, ArrowRightCircle } from "lucide-react";
 import LoaderAnimation from "@/components/LoaderAnimation";
 import ReportDetail from "@/components/ReportDetail";
 
@@ -23,6 +23,7 @@ const ReportsPage: React.FC = () => {
   const { reportsList, loadReports } = useQuizStore();
   const [selectedReport, setSelectedReport] = useState<QuizResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showFullReport, setShowFullReport] = useState(false);
 
   useEffect(() => {
     loadReports();
@@ -30,15 +31,37 @@ const ReportsPage: React.FC = () => {
 
   const handleViewReport = (report: QuizResults) => {
     setLoading(true);
-    // Simulate loading for 1 second
+    setShowFullReport(false);
+    
+    // Simulate loading steps for report viewing
+    const viewingSteps = [
+      { message: "Loading report data...", duration: 600 },
+      { message: "Rendering charts...", duration: 400 },
+      { message: "Preparing analytics...", duration: 500 },
+      { message: "Finalizing report...", duration: 500 }
+    ];
+    
+    // Show loading animation for 2 seconds
     setTimeout(() => {
       setSelectedReport(report);
       setLoading(false);
-    }, 1000);
+    }, 2000);
+  };
+  
+  const handleShowFullReport = () => {
+    setShowFullReport(true);
   };
 
   if (loading) {
-    return <LoaderAnimation message="Loading report details..." />;
+    return <LoaderAnimation 
+      message="Loading report details..." 
+      steps={[
+        { message: "Loading report data...", duration: 600 },
+        { message: "Rendering charts...", duration: 400 },
+        { message: "Preparing analytics...", duration: 500 },
+        { message: "Finalizing report...", duration: 500 }
+      ]} 
+    />;
   }
 
   return (
@@ -63,6 +86,7 @@ const ReportsPage: React.FC = () => {
                     <SidebarMenuButton
                       onClick={() => handleViewReport(report)}
                       tooltip="View report details"
+                      className={selectedReport === report ? "bg-cyber-accent/20" : ""}
                     >
                       <FileText className="h-4 w-4" />
                       <span>
@@ -86,7 +110,47 @@ const ReportsPage: React.FC = () => {
             </div>
             
             {selectedReport ? (
-              <ReportDetail report={selectedReport} />
+              <div>
+                {!showFullReport ? (
+                  <div className="cyber-panel p-6">
+                    <div className="mb-6">
+                      <h2 className="text-xl font-bold mb-4 glow-text">Performance Summary</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="cyber-border p-4 flex flex-col items-center">
+                          <span className="text-sm text-muted-foreground">Correct</span>
+                          <span className="text-2xl font-bold text-cyber-accent">{selectedReport.correct}</span>
+                        </div>
+                        <div className="cyber-border p-4 flex flex-col items-center">
+                          <span className="text-sm text-muted-foreground">Incorrect</span>
+                          <span className="text-2xl font-bold text-cyber-error">{selectedReport.incorrect}</span>
+                        </div>
+                        <div className="cyber-border p-4 flex flex-col items-center">
+                          <span className="text-sm text-muted-foreground">Skipped</span>
+                          <span className="text-2xl font-bold text-cyber-purple">{selectedReport.skipped}</span>
+                        </div>
+                        <div className="cyber-border p-4 flex flex-col items-center">
+                          <span className="text-sm text-muted-foreground">Time Taken</span>
+                          <span className="text-2xl font-bold">
+                            {Math.floor(selectedReport.timeTaken / 60)}m {selectedReport.timeTaken % 60}s
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-center mt-8">
+                      <Button 
+                        className="cyber-button flex items-center"
+                        onClick={handleShowFullReport}
+                      >
+                        <span>View Full Report</span>
+                        <ArrowRightCircle className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <ReportDetail report={selectedReport} />
+                )}
+              </div>
             ) : (
               <div className="cyber-panel flex flex-col items-center justify-center py-20">
                 <BarChart2 className="h-16 w-16 text-cyber-accent mb-4" />

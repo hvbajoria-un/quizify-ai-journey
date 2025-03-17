@@ -1,12 +1,50 @@
 
 import { Brain, Cpu, Zap, Activity } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface LoaderAnimationProps {
   message?: string;
+  steps?: { message: string; duration: number }[];
 }
 
-const LoaderAnimation = ({ message = "Generating your quiz..." }: LoaderAnimationProps) => {
+const LoaderAnimation = ({ 
+  message = "Generating your quiz...", 
+  steps 
+}: LoaderAnimationProps) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [currentMessage, setCurrentMessage] = useState(message);
+
+  useEffect(() => {
+    if (!steps || steps.length === 0) {
+      setCurrentMessage(message);
+      return;
+    }
+
+    // Initialize with the first step message
+    setCurrentMessage(steps[0].message);
+    
+    // Set up timers for each step
+    let stepIndex = 0;
+    const timers: NodeJS.Timeout[] = [];
+    
+    let cumulativeTime = 0;
+    steps.forEach((step, index) => {
+      const timer = setTimeout(() => {
+        setCurrentStep(index);
+        setCurrentMessage(step.message);
+      }, cumulativeTime);
+      
+      cumulativeTime += step.duration;
+      timers.push(timer);
+    });
+    
+    // Clean up timers on unmount
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
+  }, [steps, message]);
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 bg-cyber-darker z-50 flex flex-col items-center justify-center">
@@ -69,13 +107,14 @@ const LoaderAnimation = ({ message = "Generating your quiz..." }: LoaderAnimatio
           </div>
           
           <motion.h2
-            animate={{ 
-              opacity: [0.5, 1, 0.5],
-              transition: { duration: 2, repeat: Infinity }
-            }}
+            key={currentMessage}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
             className="text-xl md:text-2xl font-medium text-cyber-accent mb-2"
           >
-            {message}
+            {currentMessage}
           </motion.h2>
           
           <motion.div
@@ -86,6 +125,24 @@ const LoaderAnimation = ({ message = "Generating your quiz..." }: LoaderAnimatio
             }}
             className="h-1 bg-gradient-to-r from-cyber-accent to-cyber-purple rounded-full max-w-md"
           />
+          
+          {steps && (
+            <div className="mt-6 flex justify-center space-x-2">
+              {steps.map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{
+                    scale: currentStep === i ? 1.5 : 1,
+                    opacity: currentStep === i ? 1 : 0.4,
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className={`w-2 h-2 rounded-full ${
+                    currentStep === i ? "bg-cyber-accent" : "bg-cyber-accent/30"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
           
           <div className="mt-8 grid grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (

@@ -1,5 +1,5 @@
 
-import { Brain, Circuit, Zap, Activity } from "lucide-react";
+import { Brain, Cpu, Zap, Activity } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface LoaderAnimationProps {
@@ -44,7 +44,7 @@ const LoaderAnimation = ({ message = "Generating your quiz..." }: LoaderAnimatio
               }}
               className="absolute -top-2 -right-2"
             >
-              <Circuit className="w-8 h-8 text-cyber-purple" />
+              <Cpu className="w-8 h-8 text-cyber-purple" />
             </motion.div>
             
             <motion.div 

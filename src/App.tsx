@@ -1,9 +1,14 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AnimatePresence } from "framer-motion";
+import LandingPage from "./components/LandingPage";
+import QuizSetupForm from "./components/QuizSetupForm";
+import QuizPanel from "./components/QuizPanel";
+import ResultsPage from "./components/ResultsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +19,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AnimatePresence>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/setup" element={<QuizSetupForm />} />
+            <Route path="/quiz" element={<QuizPanel />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AnimatePresence>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

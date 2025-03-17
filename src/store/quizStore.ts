@@ -19,6 +19,9 @@ interface QuizState {
   isQuizFinished: boolean;
   results: QuizResults | null;
   
+  // Reports
+  reportsList: QuizResults[];
+  
   // Actions
   setQuizSetup: (setup: QuizSetup) => void;
   startQuiz: () => Promise<void>;
@@ -28,6 +31,7 @@ interface QuizState {
   previousQuestion: () => void;
   finishQuiz: () => Promise<void>;
   resetQuiz: () => void;
+  loadReports: () => void;
 }
 
 export const useQuizStore = create<QuizState>((set, get) => ({
@@ -40,6 +44,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   isQuizStarted: false,
   isQuizFinished: false,
   results: null,
+  reportsList: [],
 
   // Actions
   setQuizSetup: (setup) => set({ setup }),
@@ -50,7 +55,17 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     
     try {
       set({ isLoading: true });
+      
+      // Enforce a minimum 5-second loading time
+      const startTime = Date.now();
       const questions = await generateQuiz(setup);
+      
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, 5000 - elapsed);
+      
+      // Wait for the remaining time if needed
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
       set({ 
         questions, 
         isQuizStarted: true, 
@@ -128,6 +143,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     
     try {
       set({ isLoading: true });
+      
       // Fill in missing answers as skipped
       const finalAnswers = userAnswers.map((answer, index) => {
         if (!answer.questionId) {
@@ -141,13 +157,29 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         return answer;
       });
       
+      // Start loading timer
+      const startTime = Date.now();
       const results = await calculateResults(questions, finalAnswers);
+      
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, 5000 - elapsed);
+      
+      // Wait for the remaining time if needed
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
+      // Store the results in the local reports list
+      const updatedReports = [...get().reportsList, results];
+      
       set({ 
         results, 
         isQuizFinished: true, 
         isLoading: false,
-        userAnswers: finalAnswers
+        userAnswers: finalAnswers,
+        reportsList: updatedReports
       });
+      
+      // Persist reports to localStorage
+      localStorage.setItem('quizReports', JSON.stringify(updatedReports));
     } catch (error) {
       console.error('Failed to finish quiz:', error);
       toast.error('Failed to calculate results. Please try again.');
@@ -165,5 +197,17 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       isQuizFinished: false,
       results: null
     });
+  },
+  
+  loadReports: () => {
+    try {
+      const savedReports = localStorage.getItem('quizReports');
+      if (savedReports) {
+        set({ reportsList: JSON.parse(savedReports) });
+      }
+    } catch (error) {
+      console.error('Failed to load reports:', error);
+      toast.error('Failed to load saved reports.');
+    }
   }
 }));

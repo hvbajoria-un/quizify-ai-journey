@@ -22,6 +22,9 @@ interface QuizState {
   // Reports
   reportsList: QuizResults[];
   
+  // Timeouts and configuration
+  minLoadingTime: number;
+  
   // Actions
   setQuizSetup: (setup: QuizSetup) => void;
   startQuiz: () => Promise<void>;
@@ -45,25 +48,27 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   isQuizFinished: false,
   results: null,
   reportsList: [],
+  minLoadingTime: 5000, // Minimum loading time in milliseconds
 
   // Actions
   setQuizSetup: (setup) => set({ setup }),
   
   startQuiz: async () => {
-    const { setup } = get();
+    const { setup, minLoadingTime } = get();
     if (!setup) return;
     
     try {
       set({ isLoading: true });
       
-      // Enforce a minimum 5-second loading time
+      // Record start time to enforce minimum loading time
       const startTime = Date.now();
       const questions = await generateQuiz(setup);
       
+      // Calculate elapsed time and remaining time to enforce min loading
       const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, 5000 - elapsed);
+      const remainingTime = Math.max(0, minLoadingTime - elapsed);
       
-      // Wait for the remaining time if needed
+      // Wait for the remaining time to meet minimum loading time
       await new Promise(resolve => setTimeout(resolve, remainingTime));
       
       set({ 
@@ -71,8 +76,8 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         isQuizStarted: true, 
         isLoading: false,
         currentQuestionIndex: 0,
-        userAnswers: Array(questions.length).fill(null).map(() => ({
-          questionId: '',
+        userAnswers: Array(questions.length).fill(null).map((_, index) => ({
+          questionId: questions[index].id,
           selectedOptionId: null,
           isCorrect: false,
           timeTaken: 0
@@ -140,7 +145,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   },
   
   finishQuiz: async () => {
-    const { questions, userAnswers } = get();
+    const { questions, userAnswers, minLoadingTime } = get();
     
     try {
       set({ isLoading: true });
@@ -158,14 +163,15 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         return answer;
       });
       
-      // Start loading timer
+      // Record start time to enforce minimum loading time
       const startTime = Date.now();
       const results = await calculateResults(questions, finalAnswers);
       
+      // Calculate elapsed time and remaining time to enforce min loading
       const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, 5000 - elapsed);
+      const remainingTime = Math.max(0, minLoadingTime - elapsed);
       
-      // Wait for the remaining time if needed
+      // Wait for the remaining time to meet minimum loading time
       await new Promise(resolve => setTimeout(resolve, remainingTime));
       
       // Store the results in the local reports list

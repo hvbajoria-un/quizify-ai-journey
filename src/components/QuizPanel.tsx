@@ -30,6 +30,7 @@ const QuizPanel = () => {
   const [timer, setTimer] = useState(30);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const questionStartTimeRef = useRef<number>(Date.now());
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   const processingSteps = [
     { message: "Calculating your score...", duration: 1000 },
@@ -48,28 +49,51 @@ const QuizPanel = () => {
   useEffect(() => {
     if (questions.length > 0 && currentQuestionIndex < questions.length) {
       const currentQuestion = questions[currentQuestionIndex];
-      setTimer(currentQuestion.timeLimit || 30);
-      questionStartTimeRef.current = Date.now();
+      const currentAnswer = userAnswers[currentQuestionIndex];
+      
+      if (currentAnswer && currentAnswer.questionId === currentQuestion.id) {
+        const timeLimit = currentQuestion.timeLimit || 30;
+        const timeSpent = currentAnswer.timeTaken;
+        const remainingTime = Math.max(1, timeLimit - timeSpent);
+        setTimer(remainingTime);
+      } else {
+        setTimer(currentQuestion.timeLimit || 30);
+      }
+      
+      if (!currentAnswer || currentAnswer.questionId !== currentQuestion.id) {
+        questionStartTimeRef.current = Date.now();
+      }
     }
-  }, [currentQuestionIndex, questions]);
+  }, [currentQuestionIndex, questions, userAnswers]);
 
   useEffect(() => {
     if (timer > 0) {
-      const interval = setInterval(() => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      
+      timerRef.current = setInterval(() => {
         setTimer(prev => prev - 1);
       }, 1000);
       
-      return () => clearInterval(interval);
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      };
     } else {
       skipQuestion();
     }
   }, [timer, skipQuestion]);
   
   useEffect(() => {
-    const currentAnswer = userAnswers[currentQuestionIndex];
-    setSelectedOption(currentAnswer?.selectedOptionId || null);
-    
-    questionStartTimeRef.current = Date.now();
+    if (userAnswers[currentQuestionIndex]) {
+      const currentAnswer = userAnswers[currentQuestionIndex];
+      setSelectedOption(currentAnswer?.selectedOptionId || null);
+    } else {
+      setSelectedOption(null);
+    }
   }, [currentQuestionIndex, userAnswers]);
   
   if (isLoading) {
@@ -183,14 +207,16 @@ const QuizPanel = () => {
           </Button>
           
           <div className="flex gap-3">
-            <Button
-              onClick={handleSkipQuestion}
-              variant="outline"
-              className="flex items-center"
-            >
-              <FastForward className="mr-2 h-4 w-4" />
-              Skip
-            </Button>
+            {!isLastQuestion && (
+              <Button
+                onClick={handleSkipQuestion}
+                variant="outline"
+                className="flex items-center"
+              >
+                <FastForward className="mr-2 h-4 w-4" />
+                Skip
+              </Button>
+            )}
             
             {isLastQuestion ? (
               <Button

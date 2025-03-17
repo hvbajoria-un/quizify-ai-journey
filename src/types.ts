@@ -11,6 +11,7 @@ export interface Question {
   correctAnswerId: string;
   explanation: string;
   timeLimit?: number; // Time limit in seconds, if applicable
+  difficulty?: string; // easy/medium/hard
 }
 
 export interface UserAnswer {
@@ -53,4 +54,20 @@ export interface QuizResults {
   areasOfImprovement: string[];
   recommendations: string[];
   answers: UserAnswer[];
+}
+
+// New interface to match the provided question format
+export interface APIQuestion {
+  id: number | string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  difficulty: string;
+  duration: number;
+}
+
+// Interface for the API response
+export interface APIQuestionsResponse {
+  questions: APIQuestion[];
 }

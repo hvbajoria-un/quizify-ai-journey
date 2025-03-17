@@ -22,8 +22,8 @@ interface QuizState {
   // Actions
   setQuizSetup: (setup: QuizSetup) => void;
   startQuiz: () => Promise<void>;
-  answerQuestion: (answer: string | null) => void;
-  skipQuestion: () => void;
+  answerQuestion: (answer: string | null, timeTaken?: number) => void;
+  skipQuestion: (timeTaken?: number) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
   finishQuiz: () => Promise<void>;
@@ -69,7 +69,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     }
   },
   
-  answerQuestion: (optionId) => {
+  answerQuestion: (optionId, timeTaken = 30) => {
     const { questions, currentQuestionIndex, userAnswers } = get();
     const currentQuestion = questions[currentQuestionIndex];
     
@@ -82,13 +82,13 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       questionId: currentQuestion.id,
       selectedOptionId: optionId,
       isCorrect,
-      timeTaken: 30 // Mock time taken (seconds)
+      timeTaken
     };
     
     set({ userAnswers: updatedAnswers });
   },
   
-  skipQuestion: () => {
+  skipQuestion: (timeTaken = 30) => {
     const { questions, currentQuestionIndex, userAnswers } = get();
     const currentQuestion = questions[currentQuestionIndex];
     
@@ -99,7 +99,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       questionId: currentQuestion.id,
       selectedOptionId: null,
       isCorrect: false,
-      timeTaken: 30 // Mock time taken (seconds)
+      timeTaken
     };
     
     set({ userAnswers: updatedAnswers });
@@ -135,7 +135,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
             questionId: questions[index].id,
             selectedOptionId: null,
             isCorrect: false,
-            timeTaken: 30 // Mock time
+            timeTaken: questions[index].timeLimit || 30 // Use question's time limit or default
           };
         }
         return answer;

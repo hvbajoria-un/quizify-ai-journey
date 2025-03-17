@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuizStore } from "@/store/quizStore";
 import { motion } from "framer-motion";
@@ -30,6 +30,7 @@ const QuizPanel = () => {
   
   const [timer, setTimer] = useState(30);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const questionStartTimeRef = useRef<number>(Date.now());
   
   // Navigate to setup if no questions are loaded
   useEffect(() => {
@@ -37,6 +38,16 @@ const QuizPanel = () => {
       navigate("/setup");
     }
   }, [questions, isLoading, navigate]);
+
+  // Reset timer when question changes
+  useEffect(() => {
+    if (questions.length > 0 && currentQuestionIndex < questions.length) {
+      const currentQuestion = questions[currentQuestionIndex];
+      setTimer(currentQuestion.timeLimit || 30);
+      // Reset the timer reference for the question
+      questionStartTimeRef.current = Date.now();
+    }
+  }, [currentQuestionIndex, questions]);
 
   // Handle timer countdown
   useEffect(() => {
@@ -49,15 +60,16 @@ const QuizPanel = () => {
     } else {
       // Auto-skip when timer runs out
       skipQuestion();
-      setTimer(30); // Reset timer
     }
   }, [timer, skipQuestion]);
   
-  // Reset timer and selected option when question changes
+  // Reset selected option and start timer when question changes
   useEffect(() => {
-    setTimer(30);
     const currentAnswer = userAnswers[currentQuestionIndex];
     setSelectedOption(currentAnswer?.selectedOptionId || null);
+    
+    // Reset question start time
+    questionStartTimeRef.current = Date.now();
   }, [currentQuestionIndex, userAnswers]);
   
   if (isLoading) {
@@ -71,8 +83,11 @@ const QuizPanel = () => {
   const currentQuestion = questions[currentQuestionIndex];
   
   const handleOptionSelect = (optionId: string) => {
+    // Calculate time taken to answer
+    const timeTaken = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+    
     setSelectedOption(optionId);
-    answerQuestion(optionId);
+    answerQuestion(optionId, timeTaken);
   };
   
   const handleNextQuestion = () => {
@@ -84,7 +99,10 @@ const QuizPanel = () => {
   };
   
   const handleSkipQuestion = () => {
-    skipQuestion();
+    // Calculate time taken before skipping
+    const timeTaken = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+    
+    skipQuestion(timeTaken);
     setSelectedOption(null);
   };
   
